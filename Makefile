@@ -4,27 +4,25 @@ OPENCL_HEADERS = "/opt/AMDAPPSDK-3.0/include"
 # lets you adds one more directory to the search path.
 LIBOPENCL = "/opt/amdgpu-pro/lib/x86_64-linux-gnu"
 
-CC = gcc
-CPPFLAGS = -I${OPENCL_HEADERS}
-CFLAGS = -O2 -std=gnu99 -pedantic -Wextra -Wall \
-    -Wno-deprecated-declarations \
-    -Wno-overlength-strings
+CC = clang
+CFLAGS = -fsanitize=memory -fsanitize-memory-track-origins -fPIE -pie -fno-omit-frame-pointer -g -O2 -pedantic -Wextra -Wall -Wno-deprecated-declarations -Wno-overlength-strings
 LDFLAGS = -rdynamic -L${LIBOPENCL}
 LDLIBS = -lOpenCL -lrt
-OBJ = main.o blake.o sha256.o
+SRC = main.c blake.c sha256.c
+#OBJ = main.o blake.o sha256.o
 INCLUDES = blake.h param.h _kernel.h sha256.h
 
 all : sa-solver
 
-sa-solver : ${OBJ}
-	${CC} -o sa-solver ${OBJ} ${LDFLAGS} ${LDLIBS}
+sa-solver : ${SRC} ${INCLUDES}
+	${CC} -o sa-solver ${SRC} ${LDFLAGS} ${LDLIBS}
 
 ${OBJ} : ${INCLUDES}
 
-_kernel.h : input.cl param.h
-	echo 'const char *ocl_code = R"_mrb_(' >$@
-	cpp $< >>$@
-	echo ')_mrb_";' >>$@
+_kernel.h: input.cl param.h
+	cpp $< ocl.code
+	echo -ne "\x00" >> ocl.code
+	xxd -i ocl.code _kernel.h
 
 test : sa-solver
 	@echo Testing...
@@ -38,6 +36,6 @@ test : sa-solver
 #	different: testing/sols-100
 
 clean :
-	rm -f sa-solver _kernel.h *.o _temp_*
+	rm -f sa-solver _kernel.h *.o _temp_* ocl.code
 
 re : clean all

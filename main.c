@@ -185,7 +185,7 @@ void hexdump(uint8_t *a, uint32_t a_len)
 
 char *s_hexdump(const void *_a, uint32_t a_len)
 {
-    const uint8_t	*a = _a;
+    const uint8_t	*a = (const uint8_t *)_a;
     static char		buf[4096];
     uint32_t		i;
     for (i = 0; i < a_len && i + 2 < sizeof (buf); i++)
@@ -617,8 +617,8 @@ void print_sol(uint32_t *values, uint64_t *nonce)
 */
 int32_t cmp_target_256(void *_a, void *_b)
 {
-    uint8_t	*a = _a;
-    uint8_t	*b = _b;
+    uint8_t	*a = (uint8_t *)_a;
+    uint8_t	*b = (uint8_t *)_b;
     int32_t	i;
     for (i = SHA256_TARGET_LEN - 1; i >= 0; i--)
 	if (a[i] != b[i])
@@ -670,8 +670,8 @@ uint32_t print_solver_line(uint32_t *values, uint8_t *header,
 
 int sol_cmp(const void *_a, const void *_b)
 {
-    const uint32_t	*a = _a;
-    const uint32_t	*b = _b;
+    const uint32_t	*a = (const uint32_t *)_a;
+    const uint32_t	*b = (const uint32_t *)_b;
     for (uint32_t i = 0; i < (1 << PARAM_K); i++)
       {
 	if (*a != *b)
@@ -695,7 +695,7 @@ uint32_t print_sols(sols_t *all_sols, uint64_t *nonce, uint32_t nr_valid_sols,
     uint8_t		*valid_sols;
     uint32_t		counted;
     uint32_t		shares = 0;
-    valid_sols = malloc(nr_valid_sols * SOL_SIZE);
+    valid_sols = (uint8_t *)malloc(nr_valid_sols * SOL_SIZE);
     if (!valid_sols)
 	fatal("malloc: %s\n", strerror(errno));
     counted = 0;
@@ -1015,7 +1015,7 @@ int read_last_line(char *buf, size_t len, int block)
 	    // 1 (or more) complete lines were read
 	    break ;
       }
-    start = memrchr(buf, '\n', pos - 1);
+    start = (char *)memrchr(buf, '\n', pos - 1);
     if (start)
       {
 	warn("strange: more than 1 line was read\n");
@@ -1292,8 +1292,8 @@ void init_and_run_opencl(uint8_t *header, size_t header_len)
     const char *source;
     size_t source_len;
     //load_file("kernel.cl", &source, &source_len);
-    source = ocl_code;
-    source_len = strlen(ocl_code);
+    source = (char *)ocl_code;
+    source_len = strlen((char *)ocl_code);
     program = clCreateProgramWithSource(context, 1, (const char **)&source,
 	    &source_len, &status);
     if (status != CL_SUCCESS || !program)
